@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ResolvedImage from './ResolvedImage';
 import ManualTemplateEditor from './ManualTemplateEditor';
+import BackupCard from './BackupCard';
 import { templateConfigState } from './types/templateSchema';
 import type { Json } from './integrations/supabase/types';
 import { supabase } from './integrations/supabase/client';
@@ -143,6 +144,7 @@ export default function AdminPanel({tab,setTab,tier,setTier,orders,templates,pri
       </section>
     </div>
     <div className="ai-settings-footer"><span>As alterações só entram em vigor após salvar.</span><button type="button" className="button primary small" disabled={offline||aiSettingsSaving||assistantIdentitySaving||aiSettingsLoading||assistantIdentityLoading||assistantAvatarUploading} onClick={()=>void saveAiSettings()}>{aiSettingsSaving||assistantIdentitySaving?<><RefreshCw size={14} className="spin"/> Salvando…</>:<><Check size={15}/> Salvar configurações</>}</button></div>
+    <BackupCard disabled={offline}/>
   </section>;
   const content=tab==='Visão geral'?<>
     <div className="metric-grid"><div className="metric"><span>Receita aprovada <WalletCards size={18}/></span><strong>R$ {(revenue/100).toFixed(2).replace('.',',')}</strong><small className="neutral">Total dos pedidos aprovados</small></div><div className="metric"><span>Pedidos recebidos <ClipboardList size={18}/></span><strong>{orders.length}</strong><small className="neutral">Pedidos disponíveis</small></div><div className="metric"><span>Aguardando pagamento <FileText size={18}/></span><strong>{pending}</strong><small className="warning-text">Precisam de conferência</small></div><div className="metric"><span>Modelos cadastrados <FileText size={18}/></span><strong>{options.reduce((sum,name)=>sum+(templates[name]?.length||0),0)}</strong><small className="neutral">Na galeria atual</small></div></div>
