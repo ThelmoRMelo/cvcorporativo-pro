@@ -102,8 +102,15 @@ ${FIELDS}
 
 Nunca invente dados que o candidato não disse. Marque "done": true apenas quando o candidato confirmar que o currículo está completo.`;
 
-    const preferred = settings?.model || 'gemini-flash-latest';
-    const candidates = [...new Set([preferred, 'gemini-flash-latest', 'gemini-3.8-flash', 'gemini-flash-lite-latest'])];
+    const preferred = settings?.model || 'gemini-flash-lite-latest';
+    const candidates = [...new Set([
+      preferred,
+      'gemini-flash-lite-latest',
+      'gemini-3.5-flash-lite',
+      'gemini-3-flash-preview',
+      'gemini-flash-latest',
+      'gemini-3.8-flash',
+    ])];
     let response!: Response;
     for (const model of candidates) {
       response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
@@ -118,9 +125,15 @@ Nunca invente dados que o candidato não disse. Marque "done": true apenas quand
           },
         }),
       });
-      if (response.status !== 404) break;
-      console.warn(`[assistant-interview] Modelo indisponível: ${model}, tentando próximo.`);
-      await response.text();
+      if (response.ok) break;
+      const status = response.status;
+      const errBody = await response.text();
+      console.warn(`[assistant-interview] Modelo ${model} falhou com status ${status}:`, errBody.slice(0, 300));
+      if (![404, 500, 502, 503].includes(status)) {
+        response = new Response(errBody, { status });
+        break;
+      }
+      response = new Response(errBody, { status });
     }
 
     if (!response.ok) {
@@ -128,10 +141,10 @@ Nunca invente dados que o candidato não disse. Marque "done": true apenas quand
       console.error(`[assistant-interview] Erro Google Gemini ${response.status}:`, errorText);
 
       if ([400, 401, 403].includes(response.status)) {
-        return json({ ok: false, error: 'A chave do Google Gemini foi recusada. Verifique a chave no painel administrativo.' }, 200);
+        return json({ ok: false, error: 'A chave do Google Gemini foi recusada ou expirou. Verifique no painel administrativo.' }, 200);
       }
       if (response.status === 429) {
-        return json({ ok: false, error: 'Recebi muitas solicitações agora. Aguarde alguns segundos e tente novamente.' }, 200);
+        return json({ ok: false, error: 'Muitas mensagens ao mesmo tempo. Aguarde alguns segundos e tente novamente.' }, 200);
       }
       return json({ ok: false, error: 'Estou temporariamente indisponível. Tente novamente em instantes.' }, 200);
     }
