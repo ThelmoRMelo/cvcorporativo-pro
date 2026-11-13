@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794529155677,
+      "tag": "0000_restrict_storage_policies",
+      "breakpoints": true
+    }
+  ]
 }

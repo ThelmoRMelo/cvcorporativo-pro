@@ -434,6 +434,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_active_pix_qr: {
+        Args: { _bucket: string; _name: string }
+        Returns: boolean
+      }
       save_resume: {
         Args: {
           _client_email: string
