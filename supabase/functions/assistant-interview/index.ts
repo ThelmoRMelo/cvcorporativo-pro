@@ -8,7 +8,7 @@ const json = (body: unknown, status = 200) =>
 const FIELDS = `{
  "fullName": string, "jobTitle": string, "email": string, "phone": string, "address": string,
  "linkedin": string, "portfolio": string, "summary": string,
- "experiences": [{"company": string, "role": string, "period": string, "description": string}],
+ "experiences": [{"company": string, "role": string, "start_month": number 1-12, "start_year": number, "end_month": number 1-12, "end_year": number, "current": boolean, "activities": [string]}],
  "education": [{"institution": string, "course": string, "period": string}],
  "courses": [string], "skills": [string], "languages": [string]
 }`;
@@ -94,11 +94,19 @@ Responda ESTRITAMENTE em formato JSON com a seguinte estrutura:
 {
   "reply": "Sua próxima fala para o candidato. Seja empático, amigável, conciso e faça UMA pergunta por vez para coletar as informações do currículo.",
   "resume_patch": {campos atualizados ou novos que o candidato informou nesta mensagem},
-  "done": false
+  "done": false,
+  "activity_suggestions": null ou {"company": string, "role": string, "suggestions": [string]}
 }
 
 O campo resume_patch deve seguir este esquema (inclua apenas campos novos/alterados):
 ${FIELDS}
+
+COLETA DE EXPERIÊNCIAS PROFISSIONAIS (uma experiência por vez, nesta ordem):
+1) Empresa e cargo; 2) Período: mês e ano de início, mês e ano de saída ou se ainda trabalha lá; 3) Atividades daquele cargo; 4) Pergunte se deseja cadastrar mais alguma experiência.
+- Converta datas narradas livremente (ex.: "entrei em janeiro de 2022", "saí no fim de 2023", "estou lá até hoje") em start_month/start_year/end_month/end_year/current. Se só o ano for informado, omita o mês.
+- Envie em resume_patch.experiences SOMENTE a experiência que está sendo tratada (identificada por company + role); o sistema mescla com as anteriores.
+- Assim que souber empresa, cargo e período, preencha activity_suggestions com 4 a 6 atividades típicas e objetivas daquele cargo, e no reply NÃO liste as sugestões (elas aparecem em um cartão), apenas convide o candidato a escolher as que se aplicam ou descrever as suas. Nos demais momentos use null.
+- Quando o candidato informar atividades, coloque-as em activities daquela experiência, sem repetir as já existentes no JSON do currículo.
 
 Nunca invente dados que o candidato não disse. Marque "done": true apenas quando o candidato confirmar que o currículo está completo.`;
 
@@ -179,7 +187,12 @@ Nunca invente dados que o candidato não disse. Marque "done": true apenas quand
       ? parsed.resume_patch
       : {};
 
-    return json({ ok: true, reply: parsed.reply.slice(0, 2000), resume_patch: patch, done: parsed.done === true });
+    const sug = parsed.activity_suggestions;
+    const activity_suggestions = sug && typeof sug === 'object' && Array.isArray(sug.suggestions)
+      ? { company: str(sug.company, 200), role: str(sug.role, 200), suggestions: [...new Set(sug.suggestions.filter((x: unknown) => typeof x === 'string' && x.trim()).map((x: string) => x.trim().slice(0, 300)))].slice(0, 8) }
+      : null;
+
+    return json({ ok: true, reply: parsed.reply.slice(0, 2000), resume_patch: patch, done: parsed.done === true, activity_suggestions });
   } catch (error) {
     console.error('[assistant-interview] Exceção inesperada:', error);
     return json({ ok: false, error: 'Ocorreu um erro inesperado ao processar a conversa.' }, 200);

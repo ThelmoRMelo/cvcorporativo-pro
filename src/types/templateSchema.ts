@@ -18,7 +18,8 @@ export const CANDIDATE_FIELDS = [
   { key: 'nationality', label: 'Nacionalidade', token: 'nationality', group: 'Informações pessoais', sample: 'Brasileira', long: false },
   { key: 'driverLicense', label: 'CNH', token: 'driverLicense', group: 'Informações pessoais', sample: 'B', long: false },
   { key: 'summary', label: 'Resumo profissional', token: 'summary', group: 'Seções', sample: 'Profissional com 6 anos de experiência em controladoria, conciliações e análise de indicadores financeiros.', long: true },
-  { key: 'experience', label: 'Experiências profissionais', token: 'experience', group: 'Seções', sample: 'Empresa Alfa • Analista Financeira • 2020–atual\nConciliações bancárias e relatórios gerenciais.\n\nEmpresa Beta • Assistente Financeira • 2017–2020\nContas a pagar e receber.', long: true },
+  { key: 'experience', label: 'Experiências profissionais (com atribuições)', token: 'experience', group: 'Seções', sample: 'Empresa Alfa • Analista Financeira • 2020–atual\nConciliações bancárias e relatórios gerenciais.\n\nEmpresa Beta • Assistente Financeira • 2017–2020\nContas a pagar e receber.', long: true },
+  { key: 'experience_simple', label: 'Experiências profissionais (sem atribuições)', token: 'experience_simple', group: 'Seções', sample: 'Analista Financeira — Empresa Alfa — Jan/2020 a Atual\nAssistente Financeira — Empresa Beta — Mar/2017 a Dez/2019', long: true },
   { key: 'education', label: 'Formação e cursos', token: 'education', group: 'Seções', sample: 'Ciências Contábeis • UFC • 2018\nExcel Avançado • SENAC • 2021', long: true },
   { key: 'skills', label: 'Competências e idiomas', token: 'skills', group: 'Seções', sample: 'Excel, Power BI, SAP, atendimento, inglês intermediário', long: true },
 ] as const;

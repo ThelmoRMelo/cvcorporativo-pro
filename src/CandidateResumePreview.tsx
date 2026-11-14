@@ -1,11 +1,13 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import ResolvedImage from './ResolvedImage';
+import type { ExperienceItem } from './lib/experiences';
 
 export type ResumePreviewCandidate = {
   name:string; email:string; phone:string; city:string; role:string; summary:string; experience:string;
   education:string; skills:string; linkedin:string; photoUrl?:string; birthDate?:string; maritalStatus?:string;
   nationality?:string; driverLicense?:string; portfolio?:string;
+  experiences?:ExperienceItem[]; experience_simple?:string;
 };
 export type ResumePreviewTemplate = { id:string; name:string; color:string; layout:number; preview_url?:string; generated_html?:string|null };
 
@@ -18,6 +20,7 @@ export function fillTemplateHtml(template:ResumePreviewTemplate,candidate:Resume
     city:candidate.city,address:candidate.city,endereco:candidate.city,
     summary:candidate.summary,objective:candidate.summary,objetivo:candidate.summary,
     experience:candidate.experience,experiencia:candidate.experience,experiencias:candidate.experience,
+    experience_simple:candidate.experience_simple||'',experiencia_simples:candidate.experience_simple||'',
     education:candidate.education,educacao:candidate.education,formacao:candidate.education,
     skills:candidate.skills,competencias:candidate.skills,habilidades:candidate.skills,
     linkedin:candidate.linkedin,portfolio:candidate.portfolio||'',
@@ -65,5 +68,5 @@ export default function CandidateResumePreview({candidate,template}:{candidate:R
   const contacts=[candidate.email,candidate.phone,candidate.city,candidate.linkedin,candidate.portfolio].filter(Boolean);
   const skills=candidate.skills.split(/[,;\n]/).map(item=>item.trim()).filter(Boolean);
   const additional=[candidate.birthDate&&`Nascimento: ${new Date(`${candidate.birthDate}T00:00:00`).toLocaleDateString('pt-BR')}`,candidate.maritalStatus,candidate.nationality,candidate.driverLicense&&candidate.driverLicense!=='Não possuo'?`CNH ${candidate.driverLicense}`:''].filter(Boolean);
-  return <article className={`resume-preview-document resume-layout-${template.layout%3}`} onContextMenu={event=>event.preventDefault()}><header className="resume-preview-header" style={{backgroundColor:template.color}}>{candidate.photoUrl?<img src={candidate.photoUrl} alt="Foto do candidato"/>:<span className="resume-preview-avatar">{candidate.name?.trim()?.[0]?.toUpperCase()||'C'}</span>}<div><h2>{candidate.name||'Seu nome completo'}</h2><h3>{candidate.role||'Área ou cargo desejado'}</h3></div></header><div className="resume-preview-columns"><aside className="resume-preview-sidebar">{contacts.length>0&&<section><h4>Contato</h4>{contacts.map((value,index)=><p key={`${value}-${index}`}>{value}</p>)}</section>}{candidate.education&&<section><h4>Formação</h4><p>{candidate.education}</p></section>}{skills.length>0&&<section><h4>Competências</h4><ul>{skills.map((skill,index)=><li key={`${skill}-${index}`}>{skill}</li>)}</ul></section>}{additional.length>0&&<section><h4>Informações adicionais</h4>{additional.map((value,index)=><p key={`${value}-${index}`}>{value}</p>)}</section>}</aside><main className="resume-preview-content">{candidate.summary&&<section><h4>Resumo profissional</h4><p>{candidate.summary}</p></section>}{candidate.experience&&<section><h4>Experiência profissional</h4><p>{candidate.experience}</p></section>}{!candidate.summary&&!candidate.experience&&!candidate.education&&!skills.length&&<p className="resume-preview-empty">Complete seus dados para visualizar o currículo.</p>}</main></div></article>;
+  return <article className={`resume-preview-document resume-layout-${template.layout%3}`} onContextMenu={event=>event.preventDefault()}><header className="resume-preview-header" style={{backgroundColor:template.color}}>{candidate.photoUrl?<img src={candidate.photoUrl} alt="Foto do candidato"/>:<span className="resume-preview-avatar">{candidate.name?.trim()?.[0]?.toUpperCase()||'C'}</span>}<div><h2>{candidate.name||'Seu nome completo'}</h2><h3>{candidate.role||'Área ou cargo desejado'}</h3></div></header><div className="resume-preview-columns"><aside className="resume-preview-sidebar">{contacts.length>0&&<section><h4>Contato</h4>{contacts.map((value,index)=><p key={`${value}-${index}`}>{value}</p>)}</section>}{candidate.education&&<section><h4>Formação</h4><p>{candidate.education}</p></section>}{skills.length>0&&<section><h4>Competências</h4><ul>{skills.map((skill,index)=><li key={`${skill}-${index}`}>{skill}</li>)}</ul></section>}{additional.length>0&&<section><h4>Informações adicionais</h4>{additional.map((value,index)=><p key={`${value}-${index}`}>{value}</p>)}</section>}</aside><main className="resume-preview-content">{candidate.summary&&<section><h4>Resumo profissional</h4><p>{candidate.summary}</p></section>}{candidate.experience&&<section><h4>Experiência profissional</h4><p style={{whiteSpace:'pre-line'}}>{candidate.experience}</p></section>}{!candidate.summary&&!candidate.experience&&!candidate.education&&!skills.length&&<p className="resume-preview-empty">Complete seus dados para visualizar o currículo.</p>}</main></div></article>;
 }
