@@ -142,3 +142,8 @@ div[style*="Edit with Lovable"],
 .assistant-done-preview{margin-left:auto;border:0;border-radius:7px;padding:6px 9px;background:#244b3e;color:#fff;font-size:9px;font-weight:600;display:inline-flex;gap:5px;align-items:center;cursor:pointer}
 
 .builder-overlay{z-index:115}
+
+/* Anya chat: header and input always visible on mobile */
+.assistant-chat-header,.assistant-chat-done,.assistant-chat-input-area,.assistant-chat-footnote{flex:0 0 auto}
+.assistant-chat-messages{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+@media(max-width:640px){html:has(body.assistant-chat-open),body.assistant-chat-open{overflow:hidden;overscroll-behavior:none}.assistant-chat-modal{top:var(--anya-top,0px);bottom:auto;height:var(--anya-vh,100dvh);max-height:var(--anya-vh,100dvh)}}
