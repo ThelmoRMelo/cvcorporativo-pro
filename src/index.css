@@ -135,3 +135,8 @@ div[style*="Edit with Lovable"],
 .assistant-suggestions input[type=text]{border:1px solid hsl(var(--border,150 10% 85%));border-radius:8px;padding:6px 8px;font:inherit}
 .assistant-suggestions-actions{display:flex;gap:6px;flex-wrap:wrap}
 .assistant-suggestions-actions button{border-radius:8px;padding:6px 10px;cursor:pointer;font:inherit;border:1px solid currentColor;background:transparent;color:inherit}
+
+.resume-preview-overlay{z-index:120}
+.preview-plan-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.preview-plan-tabs button{display:flex;flex-direction:column;align-items:flex-start;padding:6px 11px;border:1px solid #dfe3da;border-radius:8px;background:#fff;color:#45544a;font:600 11px 'DM Sans',sans-serif;cursor:pointer}.preview-plan-tabs button small{font-weight:400;font-size:9px;color:#7a867b}.preview-plan-tabs button.is-active{background:#244b3e;border-color:#244b3e;color:#fff}.preview-plan-tabs button.is-active small{color:#d8e5da}
+.assistant-preview-btn{position:relative}.assistant-preview-btn svg:nth-child(2){position:absolute;right:5px;bottom:5px;background:#244b3e;border-radius:50%}
+.assistant-done-preview{margin-left:auto;border:0;border-radius:7px;padding:6px 9px;background:#244b3e;color:#fff;font-size:9px;font-weight:600;display:inline-flex;gap:5px;align-items:center;cursor:pointer}
