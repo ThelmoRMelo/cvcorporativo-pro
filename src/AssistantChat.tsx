@@ -79,9 +79,16 @@ export default function AssistantChat({candidate,onUpdateCandidate,onOpenPreview
       }
       updated.experiences=list;updated.experience=formatExperiencesFull(list);updated.experience_simple=formatExperiencesSimple(list);
     }
-    const eduItems=(patch.education||[]).map(item=>`${item.course||''} — ${item.institution||''}${item.period?` (${item.period})`:''}`.trim());
-    const courseItems=(patch.courses||[]).map(course=>`Curso: ${course}`);
-    if(eduItems.length||courseItems.length)updated.education=[...eduItems,...courseItems].filter(Boolean).join('\n');
+    const currentEduLines=(updated.education||'').split('\n').map(line=>line.trim()).filter(Boolean);
+    const existingEdu=currentEduLines.filter(line=>!line.toLowerCase().startsWith('curso:'));
+    const existingCourses=currentEduLines.filter(line=>line.toLowerCase().startsWith('curso:'));
+    const newEdu=(patch.education||[]).map(item=>`${item.course||''} — ${item.institution||''}${item.period?` (${item.period})`:''}`.trim()).filter(Boolean);
+    const newCourses=(patch.courses||[]).map(course=>`Curso: ${course.replace(/^curso:\s*/i,'').trim()}`).filter(Boolean);
+    if(patch.education!==undefined||patch.courses!==undefined){
+      const finalEdu=patch.education!==undefined?(newEdu.length?newEdu:existingEdu):existingEdu;
+      const finalCourses=patch.courses!==undefined?Array.from(new Set([...existingCourses,...newCourses])):existingCourses;
+      updated.education=[...finalEdu,...finalCourses].filter(Boolean).join('\n');
+    }
     const skillItems=[...(patch.skills||[]),...(patch.languages||[]).map(language=>`Idioma: ${language}`)];
     if(skillItems.length)updated.skills=skillItems.join(', ');
     pushCandidate(updated);

@@ -108,6 +108,12 @@ COLETA DE EXPERIÊNCIAS PROFISSIONAIS (uma experiência por vez, nesta ordem):
 - Assim que souber empresa, cargo e período, preencha activity_suggestions com 4 a 6 atividades típicas e objetivas daquele cargo, e no reply NÃO liste as sugestões (elas aparecem em um cartão), apenas convide o candidato a escolher as que se aplicam ou descrever as suas. Nos demais momentos use null.
 - Quando o candidato informar atividades, coloque-as em activities daquela experiência, sem repetir as já existentes no JSON do currículo.
 
+COLETA DE FORMAÇÃO E CURSOS (etapa por etapa obrigatória):
+1) Pergunte primeiro a formação acadêmica / escolaridade principal do candidato (nível/curso, instituição de ensino e ano de conclusão ou se ainda está cursando). Salve em resume_patch.education como array: [{"institution": string, "course": string, "period": string}].
+2) Imediatamente após registrar a escolaridade/formação acadêmica, OBRIGATORIAMENTE pergunte se o candidato possui algum curso complementar, livre, técnico, capacitação ou certificação que gostaria de acrescentar.
+3) Se o candidato informar um curso, adicione em resume_patch.courses como array de strings e pergunte amigavelmente se há mais algum curso ou qualificação para incluir (comportamento iterativo idêntico ao das experiências profissionais).
+4) Somente após o candidato confirmar expressamente que não tem mais cursos (ou responder que não possui nenhum curso complementar), avance para a próxima etapa da entrevista (competências e idiomas).
+
 Nunca invente dados que o candidato não disse. Marque "done": true apenas quando o candidato confirmar que o currículo está completo.`;
 
     const preferred = settings?.model || 'gemini-flash-lite-latest';
