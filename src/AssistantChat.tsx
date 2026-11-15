@@ -95,8 +95,19 @@ export default function AssistantChat({candidate,onUpdateCandidate,onOpenPreview
       const finalCourses=patch.courses!==undefined?Array.from(new Set([...existingCourses,...newCourses])):existingCourses;
       updated.education=[...finalEdu,...finalCourses].filter(Boolean).join('\n');
     }
-    const skillItems=[...(patch.skills||[]),...(patch.languages||[]).map(language=>`Idioma: ${language}`)];
-    if(skillItems.length)updated.skills=skillItems.join(', ');
+    const rawSkills=(updated.skills||'').split(/[,;\n]/).map(item=>item.trim()).filter(Boolean);
+    const existingSkills=rawSkills.filter(item=>!item.toLowerCase().startsWith('idioma:'));
+    const existingLanguages=rawSkills.filter(item=>item.toLowerCase().startsWith('idioma:'));
+    const newSkills=(patch.skills||[]).map(skill=>skill.trim()).filter(Boolean);
+    const newLanguages=(patch.languages||[]).map(language=>{
+      const clean=language.replace(/^idioma:\s*/i,'').trim();
+      return clean?`Idioma: ${clean}`:'';
+    }).filter(Boolean);
+    if(patch.skills!==undefined||patch.languages!==undefined){
+      const finalSkills=patch.skills!==undefined?Array.from(new Set([...existingSkills,...newSkills])):existingSkills;
+      const finalLanguages=patch.languages!==undefined?Array.from(new Set([...existingLanguages,...newLanguages])):existingLanguages;
+      updated.skills=[...finalSkills,...finalLanguages].filter(Boolean).join(', ');
+    }
     pushCandidate(updated);
   };
   const confirmSuggestions=(msgId:string,sug:Suggestions,picked:string[])=>{

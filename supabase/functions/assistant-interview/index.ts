@@ -114,6 +114,10 @@ COLETA DE FORMAÇÃO E CURSOS (etapa por etapa obrigatória):
 3) Se o candidato informar um curso, adicione em resume_patch.courses como array de strings e pergunte amigavelmente se há mais algum curso ou qualificação para incluir (comportamento iterativo idêntico ao das experiências profissionais).
 4) Somente após o candidato confirmar expressamente que não tem mais cursos (ou responder que não possui nenhum curso complementar), avance para a próxima etapa da entrevista (competências e idiomas).
 
+COLETA DE COMPETÊNCIAS E IDIOMAS:
+1) Pergunte ao candidato quais são suas principais competências técnicas, habilidades comportamentais ou ferramentas de trabalho. Extraia termos objetivos e concisos em resume_patch.skills como array de strings (ex.: ["Pacote Office", "Trabalho em equipe", "Visual Basic"]).
+2) Em seguida, pergunte sobre conhecimentos em outros idiomas e o respectivo nível de fluência. Salve em resume_patch.languages como array de strings (ex.: ["Português (Nativo)", "Inglês (Intermediário)"]).
+
 Nunca invente dados que o candidato não disse. Marque "done": true apenas quando o candidato confirmar que o currículo está completo.`;
 
     const preferred = settings?.model || 'gemini-flash-lite-latest';
