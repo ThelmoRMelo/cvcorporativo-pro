@@ -15,13 +15,14 @@ type ResumePatch={
   experiences?:Array<{company?:string;role?:string;start_month?:number|string;start_year?:number|string;end_month?:number|string;end_year?:number|string;current?:boolean;activities?:string[]|string;period?:string;description?:string}>;
   education?:Array<{institution?:string;course?:string;period?:string}>;courses?:string[];skills?:string[];languages?:string[];
 };
-type AssistantChatProps={candidate:Resume;onUpdateCandidate:(updated:Resume)=>void;onOpenPreview?:()=>void};
+type AssistantChatProps={candidate:Resume;onUpdateCandidate:(updated:Resume)=>void;onOpenPreview?:()=>void;closeSignal?:number};
 const DEFAULT_WELCOME='Olá! Eu sou a Anya, sua assistente de entrevista. Vou ajudar você a contar sua trajetória profissional. Para começar, qual é o seu nome completo?';
 const makeMessage=(role:ChatRole,text:string):ChatMessage=>({id:crypto.randomUUID(),role,text});
 
-export default function AssistantChat({candidate,onUpdateCandidate,onOpenPreview}:AssistantChatProps){
+export default function AssistantChat({candidate,onUpdateCandidate,onOpenPreview,closeSignal}:AssistantChatProps){
   const [config,setConfig]=useState<PublicAssistantConfig|null>(null);
   const [isOpen,setIsOpen]=useState(false);
+  useEffect(()=>{if(closeSignal)setIsOpen(false)},[closeSignal]);
   const [showHint,setShowHint]=useState(false);
   const [messages,setMessages]=useState<ChatMessage[]>([]);
   const [input,setInput]=useState('');
