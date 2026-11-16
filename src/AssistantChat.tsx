@@ -38,21 +38,52 @@ export default function AssistantChat({candidate,onUpdateCandidate,onOpenPreview
   const spokenRef=useRef<Set<string>>(new Set());
   const candRef=useRef(candidate);candRef.current=candidate;
   const pushCandidate=(c:Resume)=>{candRef.current=c;onUpdateCandidate(c)};
-  const endRef=useRef<HTMLDivElement>(null);
+  const messagesContainerRef=useRef<HTMLDivElement>(null);
   const inputRef=useRef<HTMLTextAreaElement>(null);
+  const scrollToBottom=(smooth=true)=>{
+    const el=messagesContainerRef.current;
+    if(!el)return;
+    try{
+      el.scrollTo({top:el.scrollHeight,behavior:smooth?'smooth':'auto'});
+    }catch{
+      el.scrollTop=el.scrollHeight;
+    }
+  };
 
   useEffect(()=>{let active=true;const loadConfig=async()=>{try{const {data,error}=await supabase.rpc('get_public_assistant_config');if(!active||error)return;const row=data?.[0];if(!row?.enabled)return;const next:PublicAssistantConfig={assistant_name:row.assistant_name||'Anya',assistant_avatar_url:row.assistant_avatar_url||null,enabled:row.enabled,welcome_message:row.welcome_message||DEFAULT_WELCOME};setConfig(next);setMessages([makeMessage('assistant',next.welcome_message)]);setShowHint(true)}catch{/* Chat stays hidden when public settings cannot be loaded. */}};void loadConfig();return()=>{active=false}},[]);
   useEffect(()=>{if(!showHint)return;const timer=window.setTimeout(()=>setShowHint(false),7000);return()=>window.clearTimeout(timer)},[showHint]);
-  useEffect(()=>{if(isOpen)endRef.current?.scrollIntoView({behavior:'smooth',block:'end'})},[messages,isLoading,isOpen]);
-  useEffect(()=>{if(!isOpen)return;const key=(event:KeyboardEvent)=>{if(event.key==='Escape')setIsOpen(false)};window.addEventListener('keydown',key);document.body.classList.add('assistant-chat-open');inputRef.current?.focus();return()=>{window.removeEventListener('keydown',key);document.body.classList.remove('assistant-chat-open')}},[isOpen]);
+  useEffect(()=>{
+    if(!isOpen)return;
+    scrollToBottom(true);
+    const rAF=requestAnimationFrame(()=>scrollToBottom(true));
+    const timer=window.setTimeout(()=>scrollToBottom(true),120);
+    return()=>{
+      cancelAnimationFrame(rAF);
+      window.clearTimeout(timer);
+    };
+  },[messages,isLoading,isOpen]);
+  useEffect(()=>{
+    if(!isOpen)return;
+    const key=(event:KeyboardEvent)=>{if(event.key==='Escape')setIsOpen(false)};
+    window.addEventListener('keydown',key);
+    document.body.classList.add('assistant-chat-open');
+    inputRef.current?.focus({preventScroll:true});
+    return()=>{
+      window.removeEventListener('keydown',key);
+      document.body.classList.remove('assistant-chat-open');
+    };
+  },[isOpen]);
   // Garante que o cursor retorne ao campo de texto quando a Anya terminar de responder.
   useEffect(()=>{
     if(!isOpen||isLoading)return;
-    const timer=window.setTimeout(()=>inputRef.current?.focus(),60);
+    const timer=window.setTimeout(()=>{
+      inputRef.current?.focus({preventScroll:true});
+      scrollToBottom(true);
+    },60);
     return()=>window.clearTimeout(timer);
   },[isOpen,isLoading]);
 
-  useEffect(()=>{if(!isOpen)return;const vv=window.visualViewport;const apply=()=>{const h=vv?vv.height:window.innerHeight;const top=vv?vv.offsetTop:0;document.documentElement.style.setProperty('--anya-vh',`${h}px`);document.documentElement.style.setProperty('--anya-top',`${top}px`)};apply();vv?.addEventListener('resize',apply);vv?.addEventListener('scroll',apply);window.addEventListener('resize',apply);return()=>{vv?.removeEventListener('resize',apply);vv?.removeEventListener('scroll',apply);window.removeEventListener('resize',apply);document.documentElement.style.removeProperty('--anya-vh');document.documentElement.style.removeProperty('--anya-top')}},[isOpen]);
+  useEffect(()=>{if(!isOpen)return;const vv=window.visualViewport;const apply=()=>{const h=vv?vv.height:window.innerHeight;const top=vv?vv.offsetTop:0;document.documentElement.style.setProperty('--anya-vh',`${h}px`);document.documentElement.style.setProperty('--anya-top',`${top}px`);scrollToBottom(false)};apply();vv?.addEventListener('resize',apply);vv?.addEventListener('scroll',apply);window.addEventListener('resize',apply);return()=>{vv?.removeEventListener('resize',apply);vv?.removeEventListener('scroll',apply);window.removeEventListener('resize',apply);document.documentElement.style.removeProperty('--anya-vh');document.documentElement.style.removeProperty('--anya-top')}},[isOpen]);
   useEffect(()=>{let stored:string|null=null;try{stored=localStorage.getItem('anya-voice')}catch{/* ignore */}if(stored)return;void supabase.functions.invoke('assistant-voice',{body:{action:'config'}}).then(r=>{if(r.data?.ok)setVoiceOn(r.data.voice_default_on===true)}).catch(()=>{})},[]);
   const toggleVoice=()=>setVoiceOn(v=>{const n=!v;try{localStorage.setItem('anya-voice',n?'on':'off')}catch{/* ignore */}if(!n)stopVoice();return n});
   useEffect(()=>{const pending=messages.filter(m=>m.role==='assistant'&&!spokenRef.current.has(m.id));pending.forEach(m=>spokenRef.current.add(m.id));if(!voiceOn||!isOpen)return;pending.forEach(m=>speak(m.text))},[messages,voiceOn,isOpen]);
@@ -151,7 +182,7 @@ export default function AssistantChat({candidate,onUpdateCandidate,onOpenPreview
     <div className="assistant-launcher-wrap">{showHint&&!isOpen&&<div className="assistant-launcher-tooltip">Montar meu currículo com a {config.assistant_name}<span/> </div>}<button type="button" className="assistant-launcher-btn" aria-label={`Conversar com ${config.assistant_name}`} aria-expanded={isOpen} onClick={()=>{setShowHint(false);setIsOpen(value=>!value)}}>{config.assistant_avatar_url?<ResolvedImage source={config.assistant_avatar_url} kind="template" id="assistant-launcher-avatar" alt={config.assistant_name} className="assistant-launcher-avatar"/>:<span className="assistant-launcher-fallback"><Bot size={26}/><Sparkles size={12}/></span>}<i className="assistant-launcher-badge"/></button><span className="assistant-pulse-ring"/></div>
     {isOpen&&<div className="assistant-chat-modal" role="dialog" aria-modal="true" aria-label={`Chat com ${config.assistant_name}`}>
       <header className="assistant-chat-header"><div className="assistant-chat-avatar">{config.assistant_avatar_url?<ResolvedImage source={config.assistant_avatar_url} kind="template" id="assistant-chat-header-avatar" alt={config.assistant_name} className="assistant-chat-avatar-image"/>:<Bot size={19}/>}</div><div className="assistant-chat-heading"><b>{config.assistant_name}</b><span><i/> Pronta para ajudar</span></div>{onOpenPreview&&<button type="button" className="assistant-chat-icon-btn assistant-preview-btn" title="Ver meu currículo nos modelos" aria-label="Ver meu currículo nos modelos" onClick={onOpenPreview}><FileText size={17}/><Search size={10} strokeWidth={3}/></button>}<button type="button" className="assistant-chat-icon-btn" title={voiceOn?'Alto-falante ligado — clique para silenciar':'Alto-falante desligado — clique para ouvir a Anya'} aria-label={voiceOn?'Silenciar voz':'Ouvir voz'} aria-pressed={voiceOn} onClick={toggleVoice}>{voiceOn?<Volume2 size={16}/>:<VolumeX size={16}/>}</button><button type="button" className="assistant-chat-icon-btn" title="Reiniciar conversa" aria-label="Reiniciar conversa" onClick={restart}><RotateCcw size={16}/></button><button type="button" className="assistant-chat-icon-btn" title="Fechar conversa" aria-label="Fechar conversa" onClick={()=>setIsOpen(false)}><X size={19}/></button></header>
-      <div className="assistant-chat-messages" aria-live="polite">{messages.map(message=><div key={message.id} className={`assistant-chat-row ${message.role==='user'?'user':'assistant'}`}>{message.role==='assistant'&&<span className="assistant-chat-message-avatar">{config.assistant_avatar_url?<ResolvedImage source={config.assistant_avatar_url} kind="template" id={`assistant-msg-${message.id}`} alt="" className="assistant-chat-avatar-image"/>:<Bot size={13}/>}</span>}<div className="assistant-chat-bubble">{message.text}</div></div>).flatMap((row,i)=>{const m=messages[i];return m.suggestions?[row,<SuggestionCard key={`${m.id}-s`} sug={m.suggestions} disabled={isLoading} onConfirm={picked=>confirmSuggestions(m.id,m.suggestions!,picked)} onMore={()=>void sendMessage(`Pode sugerir outras atividades para ${m.suggestions!.role}?`)}/>]:[row]})}{isLoading&&<div className="assistant-chat-row assistant"><span className="assistant-chat-message-avatar">{config.assistant_avatar_url?<ResolvedImage source={config.assistant_avatar_url} kind="template" id="assistant-typing-avatar" alt="" className="assistant-chat-avatar-image"/>:<Bot size={13}/>}</span><div className="assistant-chat-typing"><span/><span/><span/></div><small>{config.assistant_name} está digitando...</small></div>}<div ref={endRef}/></div>
+      <div ref={messagesContainerRef} className="assistant-chat-messages" aria-live="polite">{messages.map(message=><div key={message.id} className={`assistant-chat-row ${message.role==='user'?'user':'assistant'}`}>{message.role==='assistant'&&<span className="assistant-chat-message-avatar">{config.assistant_avatar_url?<ResolvedImage source={config.assistant_avatar_url} kind="template" id={`assistant-msg-${message.id}`} alt="" className="assistant-chat-avatar-image"/>:<Bot size={13}/>}</span>}<div className="assistant-chat-bubble">{message.text}</div></div>).flatMap((row,i)=>{const m=messages[i];return m.suggestions?[row,<SuggestionCard key={`${m.id}-s`} sug={m.suggestions} disabled={isLoading} onConfirm={picked=>confirmSuggestions(m.id,m.suggestions!,picked)} onMore={()=>void sendMessage(`Pode sugerir outras atividades para ${m.suggestions!.role}?`)}/>]:[row]})}{isLoading&&<div className="assistant-chat-row assistant"><span className="assistant-chat-message-avatar">{config.assistant_avatar_url?<ResolvedImage source={config.assistant_avatar_url} kind="template" id="assistant-typing-avatar" alt="" className="assistant-chat-avatar-image"/>:<Bot size={13}/>}</span><div className="assistant-chat-typing"><span/><span/><span/></div><small>{config.assistant_name} está digitando...</small></div>}</div>
       {isDone&&<div className="assistant-chat-done"><Sparkles size={15}/> Seus dados estão prontos!{onOpenPreview&&<button type="button" className="assistant-done-preview" onClick={onOpenPreview}><FileText size={13}/> Ver modelos do Plano Intermediário →</button>}</div>}
       <div className="assistant-chat-input-area"><textarea ref={inputRef} rows={1} value={input} readOnly={isLoading} placeholder={isLoading?'Aguarde a resposta da Anya…':'Escreva sua resposta…'} aria-label="Sua mensagem" onChange={event=>{if(isLoading)return;setInput(event.target.value);event.currentTarget.style.height='auto';event.currentTarget.style.height=`${Math.min(event.currentTarget.scrollHeight,120)}px`}} onKeyDown={event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.nativeEvent.isComposing){event.preventDefault();if(!isLoading)void sendMessage()}}}/><button type="button" aria-label="Enviar mensagem" title="Enviar mensagem" disabled={!input.trim()||isLoading} onClick={()=>void sendMessage()}><Send size={17}/></button></div>
       <div className="assistant-chat-footnote">Seus dados são preenchidos no currículo enquanto conversamos.</div>
