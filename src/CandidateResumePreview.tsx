@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Minus, Plus, RotateCcw } from 'lucide-react';
 import ResolvedImage from './ResolvedImage';
 import type { ExperienceItem } from './lib/experiences';
 
@@ -47,7 +47,14 @@ export function fillTemplateHtml(template:ResumePreviewTemplate,candidate:Resume
   });
 }
 
-function GeneratedResumeFrame({template,candidate}:{template:ResumePreviewTemplate;candidate:ResumePreviewCandidate}){
+/** Scales every font size in the filled HTML (inline styles, <style> blocks and the manual-template CSS variable). */
+export function applyFontScale(html:string,scale:number):string{
+  if(Math.abs(scale-1)<0.001)return html;
+  const scaled=html.replace(/font-size\s*:\s*([\d.]+)(px|pt|rem|em)/gi,(_m,n:string,u:string)=>`font-size:${Math.round(parseFloat(n)*scale*100)/100}${u}`);
+  return `<style>.cv-manual-page{--cv-font-scale:${scale} !important}</style>${scaled}`;
+}
+
+function GeneratedResumeFrame({template,candidate,fontScale}:{template:ResumePreviewTemplate;candidate:ResumePreviewCandidate;fontScale:number}){
   const hostRef=useRef<HTMLDivElement>(null);
   const [scale,setScale]=useState(1);
   useLayoutEffect(()=>{
@@ -59,14 +66,17 @@ function GeneratedResumeFrame({template,candidate}:{template:ResumePreviewTempla
     observer.observe(host);
     return()=>observer.disconnect();
   },[]);
-  return <div ref={hostRef} className="resume-generated-template" style={{height:`${1123*scale}px`}}><iframe title={`Prévia preenchida do modelo ${template.name}`} sandbox="" srcDoc={fillTemplateHtml(template,candidate)} style={{transform:`translateX(-50%) scale(${scale})`}}/></div>;
+  return <div ref={hostRef} className="resume-generated-template" style={{height:`${1123*scale}px`}}><iframe title={`Prévia preenchida do modelo ${template.name}`} sandbox="" srcDoc={applyFontScale(fillTemplateHtml(template,candidate),fontScale)} style={{transform:`translateX(-50%) scale(${scale})`}}/></div>;
 }
 
 export default function CandidateResumePreview({candidate,template}:{candidate:ResumePreviewCandidate;template:ResumePreviewTemplate}){
-  if(template.generated_html?.trim())return <GeneratedResumeFrame candidate={candidate} template={template}/>;
+  const [fontScale,setFontScale]=useState(1);
+  const change=(d:number)=>setFontScale(v=>Math.min(1.4,Math.max(0.6,Math.round((v+d)*100)/100)));
+  const controls=<div className="resume-font-controls" role="group" aria-label="Tamanho das letras"><span>Tamanho das letras</span><button type="button" aria-label="Diminuir letras" onClick={()=>change(-0.05)} disabled={fontScale<=0.6}><Minus size={16}/></button><b aria-live="polite">{Math.round(fontScale*100)}%</b><button type="button" aria-label="Aumentar letras" onClick={()=>change(0.05)} disabled={fontScale>=1.4}><Plus size={16}/></button><button type="button" aria-label="Voltar ao tamanho original" onClick={()=>setFontScale(1)} disabled={fontScale===1}><RotateCcw size={15}/></button></div>;
+  if(template.generated_html?.trim())return <>{controls}<GeneratedResumeFrame candidate={candidate} template={template} fontScale={fontScale}/></>;
   if(template.preview_url)return <div className="resume-template-not-ready"><div className="resume-reference-card"><span className="eyebrow">MODELO ESCOLHIDO</span><ResolvedImage source={template.preview_url} id={`resume-${template.id}`} className="resume-reference-image" alt={`Imagem original do modelo ${template.name}`} loading="eager"/><b>{template.name}</b></div><div className="resume-template-notice"><Sparkles size={20}/><h3>Este modelo está cadastrado como imagem de referência.</h3><p>Para preencher o próprio design com seus dados, a imagem precisa ser convertida em um modelo HTML editável. Essa estrutura será gerada e salva pelo processamento de templates no backend.</p><div><b>Dados que serão aplicados</b><span>{candidate.name||'Seu nome completo'} · {candidate.role||'Seu cargo desejado'}</span><span>{[candidate.email,candidate.phone,candidate.city].filter(Boolean).join(' · ')||'Seus contatos'}</span></div></div></div>;
   const contacts=[candidate.email,candidate.phone,candidate.city,candidate.linkedin,candidate.portfolio].filter(Boolean);
   const skills=candidate.skills.split(/[,;\n]/).map(item=>item.trim()).filter(Boolean);
   const additional=[candidate.birthDate&&`Nascimento: ${new Date(`${candidate.birthDate}T00:00:00`).toLocaleDateString('pt-BR')}`,candidate.maritalStatus,candidate.nationality,candidate.driverLicense&&candidate.driverLicense!=='Não possuo'?`CNH ${candidate.driverLicense}`:''].filter(Boolean);
-  return <article className={`resume-preview-document resume-layout-${template.layout%3}`} onContextMenu={event=>event.preventDefault()}><header className="resume-preview-header" style={{backgroundColor:template.color}}>{candidate.photoUrl?<img src={candidate.photoUrl} alt="Foto do candidato"/>:<span className="resume-preview-avatar">{candidate.name?.trim()?.[0]?.toUpperCase()||'C'}</span>}<div><h2>{candidate.name||'Seu nome completo'}</h2><h3>{candidate.role||'Área ou cargo desejado'}</h3></div></header><div className="resume-preview-columns"><aside className="resume-preview-sidebar">{contacts.length>0&&<section><h4>Contato</h4>{contacts.map((value,index)=><p key={`${value}-${index}`}>{value}</p>)}</section>}{candidate.education&&<section><h4>Formação</h4><p>{candidate.education}</p></section>}{skills.length>0&&<section><h4>Competências</h4><ul>{skills.map((skill,index)=><li key={`${skill}-${index}`}>{skill}</li>)}</ul></section>}{additional.length>0&&<section><h4>Informações adicionais</h4>{additional.map((value,index)=><p key={`${value}-${index}`}>{value}</p>)}</section>}</aside><main className="resume-preview-content">{candidate.summary&&<section><h4>Resumo profissional</h4><p>{candidate.summary}</p></section>}{candidate.experience&&<section><h4>Experiência profissional</h4><p style={{whiteSpace:'pre-line'}}>{candidate.experience}</p></section>}{!candidate.summary&&!candidate.experience&&!candidate.education&&!skills.length&&<p className="resume-preview-empty">Complete seus dados para visualizar o currículo.</p>}</main></div></article>;
+  return <>{controls}<article style={{fontSize:`${fontScale}em`}} className={`resume-preview-document resume-layout-${template.layout%3}`} onContextMenu={event=>event.preventDefault()}><header className="resume-preview-header" style={{backgroundColor:template.color}}>{candidate.photoUrl?<img src={candidate.photoUrl} alt="Foto do candidato"/>:<span className="resume-preview-avatar">{candidate.name?.trim()?.[0]?.toUpperCase()||'C'}</span>}<div><h2>{candidate.name||'Seu nome completo'}</h2><h3>{candidate.role||'Área ou cargo desejado'}</h3></div></header><div className="resume-preview-columns"><aside className="resume-preview-sidebar">{contacts.length>0&&<section><h4>Contato</h4>{contacts.map((value,index)=><p key={`${value}-${index}`}>{value}</p>)}</section>}{candidate.education&&<section><h4>Formação</h4><p>{candidate.education}</p></section>}{skills.length>0&&<section><h4>Competências</h4><ul>{skills.map((skill,index)=><li key={`${skill}-${index}`}>{skill}</li>)}</ul></section>}{additional.length>0&&<section><h4>Informações adicionais</h4>{additional.map((value,index)=><p key={`${value}-${index}`}>{value}</p>)}</section>}</aside><main className="resume-preview-content">{candidate.summary&&<section><h4>Resumo profissional</h4><p>{candidate.summary}</p></section>}{candidate.experience&&<section><h4>Experiência profissional</h4><p style={{whiteSpace:'pre-line'}}>{candidate.experience}</p></section>}{!candidate.summary&&!candidate.experience&&!candidate.education&&!skills.length&&<p className="resume-preview-empty">Complete seus dados para visualizar o currículo.</p>}</main></div></article></>;
 }
